@@ -10,6 +10,7 @@ function shu_testing_help()
     echo "  empty <tests> denotes all tests "
 }
 
+shopt -s expand_aliases
 alias shu_testing_clear='local name=""; local before=""; local script=""; local after=""; local compare=()'
 
 function shu_testing_new()
@@ -100,6 +101,7 @@ function shu_testing_test()
             eval $before
             eval $script
 
+            ret=0
             for pair in "${compare[@]}"; do
                 local dst="$dir/${pair%%:*}"
                 local src="${pair#*:}"
@@ -107,12 +109,15 @@ function shu_testing_test()
                     echo "[ OK ]"
                 else
                     shu-err "[ Failed ]"
+                    ret=1
                 fi
             done
 
             eval $after
         fi
     done
+
+    return $ret
 }
 
 shu_func_desc "shu-testing [new | accept | list | help] [dir] [tests]" "Diff based testing framework"
