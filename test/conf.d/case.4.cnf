@@ -1,0 +1,5 @@
+name="Test accept command"
+before="mkdir -p output; echo Wrong > test/expected/name.txt; shu-testing 3; shu-testing accept 3"
+script="shu-testing 3"
+after="rm -rf output"
+compare=()

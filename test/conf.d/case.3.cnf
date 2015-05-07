@@ -1,0 +1,5 @@
+name="Test diff"
+before="mkdir -p output"
+script="echo \$name > output/name.txt"
+after=""
+compare=("expected/name.txt:output/name.txt")

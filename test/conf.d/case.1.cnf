@@ -1,0 +1,5 @@
+name="Test new command"
+before=""
+script="shu-testing new new-test"
+after="rm -rf new-test"
+compare=("expected/new-test/:new-test/")

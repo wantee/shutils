@@ -1,0 +1,5 @@
+name="First Case"
+before="mkdir -p output"
+script="echo $name > output/1.txt"
+after="echo Finish"
+compare=("expected/:output/")

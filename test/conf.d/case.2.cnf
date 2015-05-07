@@ -1,0 +1,5 @@
+name="Test list command"
+before="mkdir -p output"
+script="shu-testing list > output/list.txt"
+after="rm -rf output"
+compare=("expected/list.txt:output/list.txt")

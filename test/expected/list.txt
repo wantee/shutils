@@ -1,0 +1,8 @@
+Test 1:
+  Name: Test new command
+Test 2:
+  Name: Test list command
+Test 3:
+  Name: Test diff
+Test 4:
+  Name: Test accept command
