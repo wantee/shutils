@@ -1,0 +1,7 @@
+language: bash
+
+install:
+  - source $TRAVIS_BUILD_DIR/shutils.sh
+script: 
+  - shu-testing
+
