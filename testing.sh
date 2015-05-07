@@ -91,6 +91,7 @@ function shu_testing_test()
         return 1
     fi
 
+    ret=0
     local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
     for c in $cases; do
         if shu-in-range $c $tests; then
@@ -101,7 +102,6 @@ function shu_testing_test()
             eval $before
             eval $script
 
-            ret=0
             for pair in "${compare[@]}"; do
                 local dst="$dir/${pair%%:*}"
                 local src="${pair#*:}"
