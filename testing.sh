@@ -22,11 +22,11 @@ function shu_testing_new()
     mkdir -p $dir/conf.d
     
     cat <<-EOF > "$dir/conf.d/case.1.cnf"
-name="First Case"
-before="mkdir -p output"
-script="echo \$name > output/1.txt"
-after="echo Finish"
-compare=("expected/:output/")
+name="First Case"                    # name of this test case
+before="mkdir -p output"             # script run before testing script
+script="echo \$name > output/1.txt"  # testing script
+after="echo Finish"                  # script run after compare
+compare=("expected/:output/")        # files to be compared, each pair separated by a colon
 EOF
 }
 
