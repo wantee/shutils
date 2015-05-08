@@ -24,7 +24,7 @@ function shu_testing_new()
     cat <<-EOF > "$dir/conf.d/case.1.cnf"
 name="First Case"                    # name of this test case
 before="mkdir -p output"             # script run before testing script
-script="echo \$name > output/1.txt"  # testing script
+script="echo \$name > output/1.txt"   # testing script
 after="echo Finish"                  # script run after compare
 compare=("expected/:output/")        # files to be compared, each pair separated by a colon
 EOF
@@ -35,7 +35,7 @@ function shu_testing_list()
     local dir=$1
 
     if [ ! -d $dir/conf.d ]; then
-        shu-err "No conf.d found"
+        shu-err "No conf.d found under <$dir>"
         return 1
     fi
 
@@ -54,7 +54,7 @@ function shu_testing_accept()
     local tests=$2
 
     if [ ! -d $dir/conf.d ]; then
-        shu-err "No conf.d found"
+        shu-err "No conf.d found under <$dir>"
         return 1
     fi
 
@@ -87,21 +87,24 @@ function shu_testing_test()
     local tests=$2
 
     if [ ! -d $dir/conf.d ]; then
-        shu-err "No conf.d found"
+        shu-err "No conf.d found under <$dir>"
         return 1
     fi
 
-    local ret=0
+    local failed=()
+    local passed=()
     local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
+    local c=""
     for c in $cases; do
         if shu-in-range $c $tests; then
             shu_testing_clear
             source "$dir/conf.d/case.$c.cnf"
             echo "Test $c: $name"
 
-            eval $before
-            eval $script
+            ( eval $before )
+            ( eval $script )
 
+            local fail_one=0
             for pair in "${compare[@]}"; do
                 local dst="$dir/${pair%%:*}"
                 local src="${pair#*:}"
@@ -109,15 +112,38 @@ function shu_testing_test()
                     echo "[ OK ]"
                 else
                     shu-err "[ Failed ]"
-                    ret=1
+                    failed+=($c)
+                    fail_one=1
                 fi
             done
 
-            eval $after
+            if [ $fail_one -eq 0 ]; then
+                passed+=($c)
+            fi
+
+            ( eval $after )
         fi
     done
 
-    return $ret
+    echo -e "\n\n\033[1mTest summary:\033[0m"
+    echo -e "\033[01;33m Tests run: $(( ${#failed[@]} + ${#passed[@]} ))\033[0m"
+    echo -e -n "\033[01;32m Passed ${#passed[@]}\033[0m"
+    if [ ${#passed[@]} -gt 0 ]; then
+        echo -n " - Tests: ${passed[@]}"
+    fi
+    echo ""
+
+    echo -e -n "\033[01;31m Failed ${#failed[@]}\033[0m"
+    if [ ${#failed[@]} -gt 0 ]; then
+        echo -n " - Tests: ${failed[@]}"
+    fi
+    echo ""
+
+    if [ ${#failed[@]} -gt 0 ]; then
+        return 1
+    else
+        return 0
+    fi
 }
 
 shu_func_desc "shu-testing [new | accept | list | help] [dir] [tests]" "Diff based testing framework"
@@ -162,7 +188,7 @@ function shu-testing()
         tests=$2
     fi
 
-    eval $cmd $dir $tests
+    ( eval $cmd $dir $tests )
     return $?
 }
 
