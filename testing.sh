@@ -102,7 +102,23 @@ function shu_testing_test()
             echo "Test $c: $name"
 
             ( eval $before )
+            ret=$?
+            if [ $ret -ne 0 ]; then
+                shu-err "Failed to run before script"
+                shu-err "[ Failed ]"
+                failed+=($c)
+                continue
+            fi
+
             ( eval $script )
+            ret=$?
+            if [ $ret -ne 0 ]; then
+                shu-err "Failed to run script"
+                shu-err "[ Failed ]"
+                failed+=($c)
+                continue
+            fi
+
 
             local fail_one=0
             for pair in "${compare[@]}"; do
@@ -122,6 +138,13 @@ function shu_testing_test()
             fi
 
             ( eval $after )
+            ret=$?
+            if [ $ret -ne 0 ]; then
+                shu-err "Failed to run after script"
+                shu-err "[ Failed ]"
+                failed+=($c)
+                continue
+            fi
         fi
     done
 
