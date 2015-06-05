@@ -1,0 +1,7 @@
+name="Test normalize"
+before="mkdir -p output"
+script="echo 'Test diff' > output/name.txt"
+after=""
+compare=("expected/name.txt:output/name.txt")
+normalize="sed 's/Test/Pass/g'"
+compare_normalize=("expected/name.txt:output/name.txt")

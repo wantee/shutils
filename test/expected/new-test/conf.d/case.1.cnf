@@ -3,3 +3,6 @@ before="mkdir -p output"             # script run before testing script
 script="echo $name > output/1.txt"   # testing script
 after="echo Finish"                  # script run after compare
 compare=("expected/:output/")        # files to be compared, each pair separated by a colon
+
+normalize=""                         # scripte used to normalize files in <compare_normalize> before compare
+compare_normalize=()                 # files to be compared after nomalize, each pair separated by a colon

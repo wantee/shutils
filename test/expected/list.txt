@@ -6,3 +6,5 @@ Test 3:
   Name: Test diff
 Test 4:
   Name: Test accept command
+Test 5:
+  Name: Test normalize

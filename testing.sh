@@ -11,7 +11,7 @@ function shu_testing_help()
 }
 
 shopt -s expand_aliases
-alias shu_testing_clear='local name=""; local before=""; local script=""; local after=""; local compare=()'
+alias shu_testing_clear='local name=""; local before=""; local script=""; local after=""; local compare=(); local normalize=""; local compare_normalize=()'
 
 function shu_testing_new()
 {
@@ -27,6 +27,9 @@ before="mkdir -p output"             # script run before testing script
 script="echo \$name > output/1.txt"   # testing script
 after="echo Finish"                  # script run after compare
 compare=("expected/:output/")        # files to be compared, each pair separated by a colon
+
+normalize=""                         # scripte used to normalize files in <compare_normalize> before compare
+compare_normalize=()                 # files to be compared after nomalize, each pair separated by a colon
 EOF
 }
 
@@ -65,6 +68,20 @@ function shu_testing_accept()
             shu_testing_clear
             source "$dir/conf.d/case.$c.cnf"
             for pair in "${compare[@]}"; do
+                dst="$dir/${pair%%:*}"
+                src="${pair#*:}"
+                if [ -d "$src" ]; then
+                    mkdir -p "$dst"
+                    if ls $src/* > /dev/null 2>&1; then
+                        cp -r $src/* $dst
+                    fi
+                else
+                    mkdir -p `dirname $dst`
+                    cp $src $dst
+                fi
+            done
+
+            for pair in "${compare_normalize[@]}"; do
                 dst="$dir/${pair%%:*}"
                 src="${pair#*:}"
                 if [ -d "$src" ]; then
@@ -119,23 +136,47 @@ function shu_testing_test()
                 continue
             fi
 
-
             local fail_one=0
             for pair in "${compare[@]}"; do
                 local dst="$dir/${pair%%:*}"
                 local src="${pair#*:}"
-                if diff --exclude=.keep -r $src $dst; then
-                    echo "[ OK ]"
-                else
-                    shu-err "[ Failed ]"
-                    failed+=($c)
+                if ! diff --exclude=.keep -r $src $dst; then
                     fail_one=1
                 fi
             done
 
-            if [ $fail_one -eq 0 ]; then
-                passed+=($c)
-            fi
+            for pair in "${compare_normalize[@]}"; do
+                local dst="$dir/${pair%%:*}"
+                local src="${pair#*:}"
+                if [ -d "$src" ] || [ -d "$dst" ]; then
+                    shu-err "compare_normlize can not be directory: $src"
+                    fail_one=1
+                    continue
+                fi
+
+                local tmp_src=/tmp/${src##*/}_norm_src
+                local tmp_dst=/tmp/${dst##*/}_norm_dst
+
+                ( eval "$normalize < $src > $tmp_src" )
+                ret=$?
+                if [ $ret -ne 0 ]; then
+                    shu-err "Failed to normlize $src"
+                    fail_one=1
+                    continue
+                fi
+
+                ( eval "$normalize < $dst > $tmp_dst" )
+                ret=$?
+                if [ $ret -ne 0 ]; then
+                    shu-err "Failed to normlize $dst"
+                    fail_one=1
+                    continue
+                fi
+
+                if ! diff $tmp_src $tmp_dst; then
+                    fail_one=1
+                fi
+            done
 
             ( eval $after )
             ret=$?
@@ -145,6 +186,15 @@ function shu_testing_test()
                 failed+=($c)
                 continue
             fi
+
+            if [ $fail_one -eq 0 ]; then
+                echo "[ OK ]"
+                passed+=($c)
+            else
+                shu-err "[ Failed ]"
+                failed+=($c)
+            fi
+
         fi
     done
 
