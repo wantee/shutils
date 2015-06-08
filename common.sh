@@ -29,8 +29,11 @@ function shu-valid-range()
     fi
 
     for r in ${range//,/ }; do
-        hyphen=`echo $r | grep -o '-' | wc -l`
+        if [ $r == "-" ]; then
+            return 1
+        fi
 
+        hyphen=`echo $r | grep -o '-' | wc -l`
         if [ $hyphen -gt 1 ]; then
             return 1
         fi
