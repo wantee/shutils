@@ -82,3 +82,22 @@ function shu-in-range()
 
     return 1;
 }
+
+shu_func_desc "shu-diff-timestamp <begin_ts> <end_ts>" "Compute diff within two timestamps(obtained from 'date +%s'). Output format is: xxhrxxmxxs"
+function shu-diff-timestamp() 
+{
+    begin_ts=$1
+    end_ts=$2
+
+    if [ -z "$begin_ts" ] || [ -z "$end_ts" ]; then
+        echo "0hr0m0s"
+        return 0;
+    fi
+
+    (( thr=(end_ts-begin_ts)/3600 ))
+    (( tmin=((end_ts-begin_ts)-thr*3600)/60 ))
+    (( tsec=(end_ts-begin_ts)-thr*3600-tmin*60 ))
+
+    echo "${thr}hr${tmin}m${tsec}s"
+    return 0;
+}
