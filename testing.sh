@@ -108,6 +108,21 @@ function shu_testing_test()
         return 1
     fi
 
+    local ret=0
+    local start=""
+    local finish=""
+    if [ -e $dir/conf.d/common.cnf ]; then
+        source "$dir/conf.d/common.cnf"
+
+        ( eval $start )
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            shu-err "Failed to run start script"
+            shu-err "[ Failed ]"
+            return $ret
+        fi
+    fi
+
     local failed=()
     local passed=()
     local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
@@ -197,6 +212,15 @@ function shu_testing_test()
 
         fi
     done
+
+    if [ -e $dir/conf.d/common.cnf ]; then
+        ( eval $finish )
+        ret=$?
+        if [ $ret -ne 0 ]; then
+            shu-err "Failed to run finish script"
+            return $ret
+        fi
+    fi
 
     echo -e "\n\n\033[1mTest summary:\033[0m"
     echo -e "\033[01;33m Tests run: $(( ${#failed[@]} + ${#passed[@]} ))\033[0m"
