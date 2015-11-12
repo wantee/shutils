@@ -15,6 +15,18 @@ function shu-err()
     echo -e "\033[01;31m$@\033[0m" >&2
 }
 
+shu_func_desc "shu-run [cmd ...]" "Run a command and check the exit status"
+function shu-run()
+{
+    eval $@
+    local ret=$?
+    if [ $ret != 0 ]; then
+        shu-err "Command exits with $ret. Command line is:"
+        shu-err $@
+        return $ret
+    fi
+}
+
 shu_func_desc "shu-valid-range <range>" "Return 0 if <range> is valid"
 function shu-valid-range() 
 {
