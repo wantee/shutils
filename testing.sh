@@ -109,17 +109,20 @@ function shu_testing_test()
     fi
 
     local ret=0
-    local start=""
-    local finish=""
+    local setup=""
+    local cleanup=""
     if [ -e $dir/conf.d/common.cnf ]; then
         source "$dir/conf.d/common.cnf"
 
-        ( eval $start )
-        ret=$?
-        if [ $ret -ne 0 ]; then
-            shu-err "Failed to run start script"
-            shu-err "[ Failed ]"
-            return $ret
+        if [ -n "$setup" ]; then
+          echo "Setting up..."
+          ( eval $setup )
+          ret=$?
+          if [ $ret -ne 0 ]; then
+              shu-err "Failed to run setup script"
+              shu-err "[ Failed ]"
+              return $ret
+          fi
         fi
     fi
 
@@ -214,11 +217,14 @@ function shu_testing_test()
     done
 
     if [ -e $dir/conf.d/common.cnf ]; then
-        ( eval $finish )
-        ret=$?
-        if [ $ret -ne 0 ]; then
-            shu-err "Failed to run finish script"
-            return $ret
+        if [ -n "$cleanup" ]; then
+          echo "Cleaning up..."
+          ( eval $cleanup )
+          ret=$?
+          if [ $ret -ne 0 ]; then
+              shu-err "Failed to run cleanup script"
+              return $ret
+          fi
         fi
     fi
 

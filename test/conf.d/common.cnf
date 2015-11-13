@@ -1,2 +1,2 @@
-start="echo Run start"
-finish="echo Run finish"
+setup="echo Run setup"
+cleanup="echo Run cleanup"
