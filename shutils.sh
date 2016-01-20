@@ -28,4 +28,3 @@ function shu-help()
 }
 
 shu_source_all
-

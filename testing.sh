@@ -294,4 +294,3 @@ function shu-testing()
     ( eval $cmd $dir $tests )
     return $?
 }
-
