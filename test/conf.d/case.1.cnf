@@ -1,5 +1,5 @@
 name="Test new command"
-before=""
+before="echo Starting $SHU_CASE"
 script="shu-testing new new-test"
 after="rm -rf new-test"
 compare=("expected/new-test/:new-test/")

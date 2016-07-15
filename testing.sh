@@ -11,7 +11,7 @@ function shu_testing_help()
 }
 
 shopt -s expand_aliases
-alias shu_testing_clear='local name=""; local before=""; local script=""; local after=""; local compare=(); local normalize=""; local compare_normalize=()'
+alias shu_testing_clear='local name=""; local before=""; local script=""; local after=""; local compare=(); local normalize=""; local compare_normalize=(); export SHU_CASE=$c'
 
 function shu_testing_new()
 {
@@ -20,11 +20,11 @@ function shu_testing_new()
     mkdir -p $dir
     mkdir -p $dir/expected
     mkdir -p $dir/conf.d
-    
+
     cat <<-EOF > "$dir/conf.d/case.1.cnf"
 name="First Case"                    # name of this test case
 before="mkdir -p output"             # script run before testing script
-script="echo \$name > output/1.txt"   # testing script
+script="echo "\$name \$SHU_CASE" > output/1.txt"   # testing script
 after="echo Finish"                  # script run after compare
 compare=("expected/:output/")        # files to be compared, each pair separated by a colon
 
@@ -250,7 +250,7 @@ function shu_testing_test()
 }
 
 shu_func_desc "shu-testing [new | accept | list | help] [dir] [tests]" "Diff based testing framework"
-function shu-testing() 
+function shu-testing()
 {
     local cmd="shu_testing_test"
     local dir="test"
@@ -274,7 +274,7 @@ function shu-testing()
             shu_testing_help
             return 0
             ;;
-        *) 
+        *)
             ;;
         esac
     fi
