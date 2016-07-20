@@ -2,12 +2,14 @@
 
 function shu_testing_help()
 {
-    echo "shu-testing [dir] [tests]: Run tests"
+    echo "shu-testing [dir] [cases]: Run tests"
     echo "shu-testing new [dir]: Create a new test site"
-    echo "shu-testing list [dir] [tests]: List tests"
-    echo "shu-testing accept [dir] [tests]: Accept build: overwrite expected files with build files"
+    echo "shu-testing list [dir] [cases]: List cases"
+    echo "shu-testing accept [dir] [cases]: Accept build: overwrite expected files with build files"
+    echo "shu-testing add [dir] [case]: Add a new case"
+    echo "shu-testing del [dir] [case]: Delete a case"
     echo "  default <dir>: ./tests"
-    echo "  empty <tests> denotes all tests "
+    echo "  empty <cases> denotes all cases "
 }
 
 shopt -s expand_aliases
@@ -42,8 +44,8 @@ function shu_testing_list()
         return 1
     fi
 
-    local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
-    for c in $cases; do
+    local all_cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
+    for c in $all_cases; do
         echo "Test $c:"
         shu_testing_clear
         source "$dir/conf.d/case.$c.cnf"
@@ -54,16 +56,16 @@ function shu_testing_list()
 function shu_testing_accept()
 {
     local dir=$1
-    local tests=$2
+    local cases=$2
 
     if [ ! -d $dir/conf.d ]; then
         shu-err "No conf.d found under <$dir>"
         return 1
     fi
 
-    local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
-    for c in $cases; do
-        if shu-in-range $c $tests; then
+    local all_cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
+    for c in $all_cases; do
+        if shu-in-range $c $cases; then
             echo "Accept test $c."
             shu_testing_clear
             source "$dir/conf.d/case.$c.cnf"
@@ -101,7 +103,7 @@ function shu_testing_accept()
 function shu_testing_test()
 {
     local dir=$1
-    local tests=$2
+    local cases=$2
 
     if [ ! -d $dir/conf.d ]; then
         shu-err "No conf.d found under <$dir>"
@@ -128,10 +130,10 @@ function shu_testing_test()
 
     local failed=()
     local passed=()
-    local cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
+    local all_cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
     local c=""
-    for c in $cases; do
-        if shu-in-range $c $tests; then
+    for c in $all_cases; do
+        if shu-in-range $c $cases; then
             shu_testing_clear
             source "$dir/conf.d/case.$c.cnf"
             echo "Test $c: $name"
@@ -249,12 +251,166 @@ function shu_testing_test()
     fi
 }
 
-shu_func_desc "shu-testing [new | accept | list | help] [dir] [tests]" "Diff based testing framework"
+function shu_testing_add()
+{
+    local dir=$1
+    local case=$2
+
+    if [ -n "$case" ]; then
+      if ! echo $case | egrep '^[0-9]+$' &> /dev/null ; then
+          shu-err "<case> must be one integer."
+          return 1
+      fi
+    fi
+
+    if [ ! -d $dir/conf.d ]; then
+      shu-err "No conf.d found under <$dir>"
+      return 1
+    fi
+
+    local all_cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -rn`
+    if [ -z "$case" ]; then
+      case=`echo $all_cases | awk '{print $1}'`
+      case=$((case+1))
+    fi
+    for c in $all_cases; do
+      if [ $c -ge $case ]; then
+        # expecteds
+        from=()
+        shu_testing_clear
+        source "$dir/conf.d/case.$c.cnf"
+        for pair in "${compare[@]}"; do
+          from+=($dir/${pair%%:*})
+        done
+        for pair in "${compare_normalize[@]}"; do
+          from+=($dir/${pair%%:*})
+        done
+
+        to=()
+        c=$((c+1))
+        shu_testing_clear
+        source "$dir/conf.d/case.$((c-1)).cnf"
+        for pair in "${compare[@]}"; do
+          to+=($dir/${pair%%:*})
+        done
+        for pair in "${compare_normalize[@]}"; do
+          to+=($dir/${pair%%:*})
+        done
+
+        for i in `seq 0 $((${#from[*]} - 1))`; do
+          src=${from[$i]}
+          dst=${to[$i]}
+          echo "Moving $src -> $dst"
+          if [ "$src" != "$dst" ] && [ -e "$src" ]; then
+            if [ -d "$src" ]; then
+              mkdir -p "$dst"
+              if ls $src/* > /dev/null 2>&1; then
+                  mv -r $src/* $dst
+              fi
+            else
+              mkdir -p `dirname $dst`
+              mv $src $dst
+            fi
+          fi
+        done
+        c=$((c-1))
+
+        src="$dir/conf.d/case.$c.cnf"
+        dst="$dir/conf.d/case.$((c+1)).cnf"
+        echo "Moving $src -> $dst"
+        shu-run "mv $src $dst"  || return 1
+      fi
+    done
+    touch "$dir/conf.d/case.$case.cnf"
+    echo -e "Case \033[1m$case\033[0m created under $dir/conf.d/case.$case/cnf."
+}
+
+function shu_testing_del()
+{
+    local dir=$1
+    local case=$2
+
+    if [ -n "$case" ]; then
+      if ! echo $case | egrep '^[0-9]+$' &> /dev/null ; then
+          shu-err "<case> must be one integer."
+          return 1
+      fi
+    fi
+
+    if [ ! -d $dir/conf.d ]; then
+      shu-err "No conf.d found under <$dir>"
+      return 1
+    fi
+
+    local all_cases=`ls $dir/conf.d/case.*.cnf | awk -F'.' '{print $(NF-1)}' | sort -n`
+    if [ -z "$case" ]; then
+      case=`echo $all_cases | awk '{print $NF}'`
+    fi
+    found=false
+    for c in $all_cases; do
+      if [ $c -eq $case ]; then
+        shu-run rm "$dir/conf.d/case.$c.cnf" || return 1
+        echo -e "Case \033[1m$case\033[0m deleted."
+        found=true
+      fi
+      if [ $c -gt $case ]; then
+        # expecteds
+        from=()
+        shu_testing_clear
+        source "$dir/conf.d/case.$c.cnf"
+        for pair in "${compare[@]}"; do
+          from+=($dir/${pair%%:*})
+        done
+        for pair in "${compare_normalize[@]}"; do
+          from+=($dir/${pair%%:*})
+        done
+
+        to=()
+        c=$((c-1))
+        shu_testing_clear
+        source "$dir/conf.d/case.$((c+1)).cnf"
+        for pair in "${compare[@]}"; do
+          to+=($dir/${pair%%:*})
+        done
+        for pair in "${compare_normalize[@]}"; do
+          to+=($dir/${pair%%:*})
+        done
+
+        for i in `seq 0 $((${#from[*]} - 1))`; do
+          src=${from[$i]}
+          dst=${to[$i]}
+          echo "Moving $src -> $dst"
+          if [ "$src" != "$dst" ] && [ -e "$src" ]; then
+            if [ -d "$src" ]; then
+              mkdir -p "$dst"
+              if ls $src/* > /dev/null 2>&1; then
+                  mv -r $src/* $dst
+              fi
+            else
+              mkdir -p `dirname $dst`
+              mv $src $dst
+            fi
+          fi
+        done
+        c=$((c+1))
+
+        src="$dir/conf.d/case.$c.cnf"
+        dst="$dir/conf.d/case.$((c-1)).cnf"
+        echo "Moving $src -> $dst"
+        shu-run "mv $src $dst"  || return 1
+      fi
+    done
+    if ! $found; then
+      shu-err "No Case $case founded."
+    fi
+}
+
+shu_func_desc "shu-testing [new | accept | list | add | help] [dir] [test(s)]" "Diff based testing framework"
 function shu-testing()
 {
     local cmd="shu_testing_test"
     local dir="test"
-    local tests=""
+    local cases=""
 
     if [ $# -ge 1 ]; then
         case "$1" in
@@ -270,6 +426,14 @@ function shu-testing()
             cmd=shu_testing_list
             shift
             ;;
+        add)
+            cmd=shu_testing_add
+            shift
+            ;;
+        del)
+            cmd=shu_testing_del
+            shift
+            ;;
         help)
             shu_testing_help
             return 0
@@ -280,17 +444,18 @@ function shu-testing()
     fi
 
     if [ $# -eq 1 ]; then
-        if [ $cmd == "shu_testing_accept" -o $cmd == "shu_testing_test" ] \
+        if [ $cmd == "shu_testing_accept" -o $cmd == "shu_testing_test" \
+             -o $cmd == "shu_testing_add" -o $cmd == "shu_testing_del" ] \
             && shu-valid-range $1; then
-            tests=$1
+            cases=$1
         else
             dir=$1
         fi
     elif [ $# -gt 1 ]; then
         dir=$1
-        tests=$2
+        cases=$2
     fi
 
-    ( eval $cmd $dir $tests )
+    ( eval $cmd $dir $cases )
     return $?
 }
