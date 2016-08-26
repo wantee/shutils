@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function shu_func_desc() 
+function shu_func_desc()
 {
     if [ -n "$SHUTILS_HELP" ]; then
         echo -n "  $1: "
@@ -10,7 +10,7 @@ function shu_func_desc()
 }
 
 shu_func_desc "shu-err [string ...]" "Print to stderr, red color"
-function shu-err() 
+function shu-err()
 {
     echo -e "\033[01;31m$@\033[0m" >&2
 }
@@ -28,7 +28,7 @@ function shu-run()
 }
 
 shu_func_desc "shu-valid-range <range>" "Return 0 if <range> is valid"
-function shu-valid-range() 
+function shu-valid-range()
 {
     range=$1
 
@@ -55,7 +55,7 @@ function shu-valid-range()
 }
 
 shu_func_desc "shu-in-range <n> [range]" "Return 0 if <n> is in <range>, <range> can be: -3,5,7-9,10-"
-function shu-in-range() 
+function shu-in-range()
 {
     t=$1
     range=$2
@@ -96,13 +96,13 @@ function shu-in-range()
 }
 
 shu_func_desc "shu-diff-timestamp <begin_ts> <end_ts>" "Compute diff within two timestamps(obtained from 'date +%s'). Output format is: xxhrxxmxxs"
-function shu-diff-timestamp() 
+function shu-diff-timestamp()
 {
     begin_ts=$1
     end_ts=$2
 
     if [ -z "$begin_ts" ] || [ -z "$end_ts" ]; then
-        echo "0hr0m0s"
+        echo "0s"
         return 0;
     fi
 
@@ -110,6 +110,13 @@ function shu-diff-timestamp()
     (( tmin=((end_ts-begin_ts)-thr*3600)/60 ))
     (( tsec=(end_ts-begin_ts)-thr*3600-tmin*60 ))
 
-    echo "${thr}hr${tmin}m${tsec}s"
+    if [ ${thr} -gt 0 ]; then
+        echo "${thr}hr${tmin}m${tsec}s"
+    elif [ ${tmin} -gt 0 ]; then
+        echo "${tmin}m${tsec}s"
+    else
+        echo "${tsec}s"
+    fi
+
     return 0;
 }

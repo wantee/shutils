@@ -134,6 +134,7 @@ function shu_testing_test()
     local c=""
     for c in $all_cases; do
         if shu-in-range $c $cases; then
+            begin_ts=`date +%s`
             shu_testing_clear
             source "$dir/conf.d/case.$c.cnf"
             echo "Test $c: $name"
@@ -206,15 +207,15 @@ function shu_testing_test()
                 failed+=($c)
                 continue
             fi
+            end_ts=`date +%s`
 
             if [ $fail_one -eq 0 ]; then
-                echo "[ OK ]"
+                echo "[ OK ] (`shu-diff-timestamp $begin_ts $end_ts`)"
                 passed+=($c)
             else
-                shu-err "[ Failed ]"
+                shu-err "[ Failed ] (`shu-diff-timestamp $begin_ts $end_ts`)"
                 failed+=($c)
             fi
-
         fi
     done
 
