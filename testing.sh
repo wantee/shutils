@@ -298,22 +298,24 @@ function shu_testing_add()
           to+=($dir/${pair%%:*})
         done
 
-        for i in `seq 0 $((${#from[*]} - 1))`; do
-          src=${from[$i]}
-          dst=${to[$i]}
-          echo "Moving $src -> $dst"
-          if [ "$src" != "$dst" ] && [ -e "$src" ]; then
-            if [ -d "$src" ]; then
-              mkdir -p "$dst"
-              if ls $src/* > /dev/null 2>&1; then
-                  mv -r $src/* $dst
+        if [ ${#from[*]} -gt 0 ]; then
+          for i in `seq 0 $((${#from[*]} - 1))`; do
+            src=${from[$i]}
+            dst=${to[$i]}
+            echo "Moving $src -> $dst"
+            if [ "$src" != "$dst" ] && [ -e "$src" ]; then
+              if [ -d "$src" ]; then
+                mkdir -p "$dst"
+                if ls $src/* > /dev/null 2>&1; then
+                    mv -r $src/* $dst
+                fi
+              else
+                mkdir -p `dirname $dst`
+                mv $src $dst
               fi
-            else
-              mkdir -p `dirname $dst`
-              mv $src $dst
             fi
-          fi
-        done
+          done
+        fi
         c=$((c-1))
 
         src="$dir/conf.d/case.$c.cnf"
