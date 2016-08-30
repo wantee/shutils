@@ -325,7 +325,7 @@ function shu_testing_add()
       fi
     done
     touch "$dir/conf.d/case.$case.cnf"
-    echo -e "Case \033[1m$case\033[0m created under $dir/conf.d/case.$case/cnf."
+    echo -e "Case \033[1m$case\033[0m created at <$dir/conf.d/case.$case.cnf>."
 }
 
 function shu_testing_del()
