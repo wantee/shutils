@@ -162,6 +162,10 @@ function shu_testing_test()
                 local dst="$dir/${pair%%:*}"
                 local src="${pair#*:}"
                 if ! diff --exclude=.keep -r $src $dst; then
+                    echo "==="
+                    echo "< :output"
+                    echo "---"
+                    echo "> :expected"
                     fail_one=1
                 fi
             done
@@ -195,6 +199,10 @@ function shu_testing_test()
                 fi
 
                 if ! diff $tmp_src $tmp_dst; then
+                    echo "==="
+                    echo "< :output"
+                    echo "---"
+                    echo "> :expected"
                     fail_one=1
                 fi
             done
